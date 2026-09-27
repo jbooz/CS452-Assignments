@@ -1,4 +1,4 @@
-# Homework #1: Queue<Anon>
+# Homework #2: Memory Hole
 
 * Author: Jonathan Boozel
 * Class: CS452 Section #2
@@ -6,14 +6,14 @@
 
 ## Overview
 
-The goal of this program is to create a double-ended doubly-linked list that acts as a
-queue in the C language. It has Nodes that point to next/previous Nodes, and Nodes can
-be added to either end. The queue operates under FIFO, which is typical for this type
-of data structure. The queue has 4 main methods that manipulate its data. The 4 methods,
-put, get, ith, and rem all attempt to alter the contents or retrieve data from the queue.
+The goal of this program is to implement a user-space memory allocator using the buddy system algorithm.
+The allocator uses the buddy system to manage memory regions obtained directly from the operating system
+via functions like mmap() (which uses functions such as "malloc()" for memory management). All of these
+functions work in tandem with one another to create a fluent memory management system that works seamlessly
+to allocate memory correctly across the operating system.
 
-The "main.c" file is the main program, which is meant to test functionality of each of the
-methods described above. The program will run to check that every method works as intended.
+The main.c file is used to test the functionality of everything, as it runs a few tests and sees if they pass
+to determine if the program is running as intended.
 
 ## Steps to Compile
 

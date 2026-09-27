@@ -5,40 +5,40 @@
 #include "deq.h"
 #include "error.h"
 
-// indices and size of array of node pointers
 typedef enum {Head,Tail,Ends} End;
 
 typedef struct Node {
-  struct Node *np[Ends];        // next/prev neighbors
+  struct Node *np[Ends];
   Data data;
 } *Node;
 
 typedef struct {
-  Node ht[Ends];                // head/tail nodes
+  Node ht[Ends];
   int len;
 } *Rep;
 
+/*
+ * Validates queue handle q and returns representation Rep.
+ */
 static Rep rep(Deq q) {
   if (!q) ERROR("zero pointer");
   return (Rep)q;
 }
 
-/* This method creates a new Node, then appends that Node to one
-end of the queue. This increases the queue's size by 1. */
+/*
+ * Creates a new Node and inserts it at specified end e.
+ */
 static void put(Rep r, End e, Data d) {
-  // Create a Node
   Node n = (Node)malloc(sizeof(*n));
   if (!n) {
     ERROR("malloc() failed");
   }
   n->data = d;
 
-  // Opposite End
   End o = 1 - e;
   n->np[e] = NULL;
   n->np[o] = r->ht[e];
 
-  // Adds to one end, updates len
   if (r->ht[e]) {
     r->ht[e]->np[e] = n;
   }
@@ -49,27 +49,26 @@ static void put(Rep r, End e, Data d) {
   r->len++;
 }
 
-/* This method returns data from the Node that is at the specified
-index. This does not change the size of the queue. */
+/*
+ * Retrieves data from Node at index i from end e.
+ */
 static Data ith(Rep r, End e, int i) {
-  // Determine if index is in range, then begin traversal
   if (i < 0 || i >= r->len) {
     ERROR("index out of range");
   }
   End o = 1 - e;
   Node n = r->ht[e];
 
-  // Find the node, then return its data
   for (int k = 0; k < i; k++) {
     n = n->np[o];
   }
   return n->data;
 }
 
-/* This method returns the data from a node at one end of
-the queue. This decreases the queue's size by 1. */
+/*
+ * Removes and returns data from the Node at end e.
+ */
 static Data get(Rep r, End e) {
-  // Check if empty, then get Node from one end
   if (r->len == 0) {
     ERROR("empty queue");
   }
@@ -77,8 +76,6 @@ static Data get(Rep r, End e) {
   Data d = n->data;
   End o = 1 - e;
 
-  // Change previous/next nodes to null to "detach"
-  // the node from the rest of the queue
   r->ht[e] = n->np[o];
   if (r->ht[e]) {
     r->ht[e]->np[e] = NULL;
@@ -87,18 +84,16 @@ static Data get(Rep r, End e) {
     r->ht[o] = NULL;
   }
 
-  // Remove it, decrement len, and return the data
   free(n);
   r->len--;
   return d;
 }
 
-/* This method traverses the queue starting from one end
-until a Node with matching data is found, and that Node is then removed
-from the queue. This decreases the queue's size by 1. */
+/*
+ * Removes first Node matching data d starting from end e.
+ */
 static Data rem(Rep r, End e, Data d) {
   End o = 1 - e;
-  // Traverse queue until node is found, then remove it
   for (Node n = r->ht[e]; n; n = n->np[o]) {
     if (n->data == d) {
       Node prev = n->np[e];
@@ -125,6 +120,9 @@ static Data rem(Rep r, End e, Data d) {
   return NULL;
 }
 
+/*
+ * Creates a new empty double-ended queue.
+ */
 extern Deq deq_new() {
   Rep r=(Rep)malloc(sizeof(*r));
   if (!r) ERROR("malloc() failed");
@@ -134,23 +132,62 @@ extern Deq deq_new() {
   return r;
 }
 
+/*
+ * Returns element count in queue q.
+ */
 extern int deq_len(Deq q) { return rep(q)->len; }
 
+/*
+ * Pushes element d onto head of queue.
+ */
 extern void deq_head_put(Deq q, Data d) {        put(rep(q),Head,d); }
+
+/*
+ * Pops element from head of queue.
+ */
 extern Data deq_head_get(Deq q)         { return get(rep(q),Head);   }
+
+/*
+ * Inspects element at index i from head.
+ */
 extern Data deq_head_ith(Deq q, int i)  { return ith(rep(q),Head,i); }
+
+/*
+ * Removes first element matching d starting from head.
+ */
 extern Data deq_head_rem(Deq q, Data d) { return rem(rep(q),Head,d); }
 
+/*
+ * Pushes element d onto tail of queue.
+ */
 extern void deq_tail_put(Deq q, Data d) {        put(rep(q),Tail,d); }
+
+/*
+ * Pops element from tail of queue.
+ */
 extern Data deq_tail_get(Deq q)         { return get(rep(q),Tail);   }
+
+/*
+ * Inspects element at index i from tail.
+ */
 extern Data deq_tail_ith(Deq q, int i)  { return ith(rep(q),Tail,i); }
+
+/*
+ * Removes first element matching d starting from tail.
+ */
 extern Data deq_tail_rem(Deq q, Data d) { return rem(rep(q),Tail,d); }
 
+/*
+ * Applies function f to every data element in queue.
+ */
 extern void deq_map(Deq q, DeqMapF f) {
   for (Node n=rep(q)->ht[Head]; n; n=n->np[Tail])
     f(n->data);
 }
 
+/*
+ * Destroys queue q and cleans up nodes.
+ */
 extern void deq_del(Deq q, DeqMapF f) {
   if (f) deq_map(q,f);
   Node curr=rep(q)->ht[Head];
@@ -162,6 +199,9 @@ extern void deq_del(Deq q, DeqMapF f) {
   free(q);
 }
 
+/*
+ * Generates space-separated string representation of queue.
+ */
 extern Str deq_str(Deq q, DeqStrF f) {
   char *s=strdup("");
   for (Node n=rep(q)->ht[Head]; n; n=n->np[Tail]) {
