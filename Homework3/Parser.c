@@ -53,13 +53,30 @@ static T_words p_words() {
 }
 
 static T_command p_command() {
-  T_words words=0;
-  words=p_words();
+  T_words words=p_words();
   if (!words)
     return 0;
   T_command command=new_command();
   command->words=words;
+  if (eat("<")) {
+    command->in=p_word();
+    if (eat(">"))
+      command->out=p_word();
+  } else if (eat(">")) {
+    command->out=p_word();
+    if (eat("<"))
+      command->in=p_word();
+  }
   return command;
+}
+
+static void f_command(T_command t) {
+  if (!t)
+    return;
+  f_words(t->words);
+  f_word(t->in);
+  f_word(t->out);
+  free(t);
 }
 
 static T_pipeline p_pipeline() {

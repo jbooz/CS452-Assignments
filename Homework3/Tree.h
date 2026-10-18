@@ -31,6 +31,12 @@ struct T_word {
   char *s;
 };
 
+struct T_command {
+  T_words words;
+  T_word in;
+  T_word out;
+};
+
 extern T_sequence new_sequence();
 extern T_pipeline new_pipeline();
 extern T_command  new_command();

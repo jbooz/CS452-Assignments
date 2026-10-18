@@ -5,10 +5,14 @@
 
 #include "Command.h"
 #include "error.h"
+#include <fcntl.h>
+#include <readline/history.h>
 
 typedef struct {
   char *file;
   char **argv;
+  char *in;
+  char *out;
 } *CommandRep;
 
 #define BIARGS CommandRep r, int *eof, Jobs jobs
@@ -53,6 +57,26 @@ BIDEFN(cd) {
     ERROR("chdir() failed"); // warn
 }
 
+BIDEFN(history) {
+  builtin_args(r, 0);
+  HIST_ENTRY **list = history_list();
+  if (list) {
+    for (int i = 0; list[i]; i++) {
+      printf("%d  %s\n", i + history_base, list[i]->line);
+    }
+  }
+}
+
+static int builtin(BIARGS) {
+  static const Builtin builtins[]={
+    BIENTRY(exit),
+    BIENTRY(pwd),
+    BIENTRY(cd),
+    BIENTRY(history),
+    {0,0}
+  };
+}
+
 static int builtin(BIARGS) {
   typedef struct {
     char *s;
@@ -93,18 +117,34 @@ static char **getargs(T_words words) {
   return argv;
 }
 
-extern Command newCommand(T_words words) {
+extern Command newCommand(T_command t) {
   CommandRep r=(CommandRep)malloc(sizeof(*r));
   if (!r)
     ERROR("malloc() failed");
-  r->argv=getargs(words);
+  r->argv=getargs(t->words);
   r->file=r->argv[0];
+  r->in=t->in ? strdup(t->in->s) : 0;
+  r->out=t->out ? strdup(t->out->s) : 0;
   return r;
 }
 
 static void child(CommandRep r, int fg) {
   int eof=0;
   Jobs jobs=newJobs();
+  
+  if (r->in) {
+    int fd = open(r->in, O_RDONLY);
+    if (fd < 0) ERROR("open() failed for input redirection");
+    dup2(fd, STDIN_FILENO);
+    close(fd);
+  }
+  if (r->out) {
+    int fd = open(r->out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) ERROR("open() failed for output redirection");
+    dup2(fd, STDOUT_FILENO);
+    close(fd);
+  }
+
   if (builtin(r,&eof,jobs))
     return;
   execvp(r->argv[0],r->argv);
@@ -134,6 +174,8 @@ extern void freeCommand(Command command) {
   while (*argv)
     free(*argv++);
   free(r->argv);
+  if (r->in) free(r->in);
+  if (r->out) free(r->out);
   free(r);
 }
 
