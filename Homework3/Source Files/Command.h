@@ -7,10 +7,10 @@ typedef void *Command;
 #include "Jobs.h"
 #include "Sequence.h"
 
-extern Command newCommand(T_words words);
-
-extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
-			int *jobbed, int *eof, int fg);
+extern Command newCommand(T_command t);
+extern int isBuiltin(char *name);
+extern int execBuiltinIfPossible(Command command, int *eof, Jobs jobs);
+extern void execCommandInChild(Command command, int *eof, Jobs jobs);
 
 extern void freeCommand(Command command);
 extern void freestateCommand();

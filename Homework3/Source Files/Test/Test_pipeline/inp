@@ -1,0 +1,1 @@
+cat Test/Test_pwd/inp | wc -l
